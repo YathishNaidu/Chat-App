@@ -14,11 +14,11 @@ button{background:#3b82f6;color:white;}
 <body>
 <div class="box">
 <h2>Login</h2>
-<input id="phone">
+<input id="phone" placeholder="+91XXXXXXXXXX">
 <button onclick="sendOTP()">Send OTP</button>
 
 <div id="otpBox">
-<input id="otp">
+<input id="otp" placeholder="OTP">
 <button onclick="verifyOTP()">Login</button>
 </div>
 
@@ -30,8 +30,8 @@ button{background:#3b82f6;color:white;}
 
 <script>
 firebase.initializeApp({
- apiKey:"AIzaSyBg65FsCjDQidq8W3frj2F1qbZoJpHqIBQ",
- authDomain:"chat-app-1929b.firebaseapp.com"
+ apiKey:"YOUR_API_KEY",
+ authDomain:"YOUR_DOMAIN.firebaseapp.com"
 });
 
 let confirmationResult, recaptcha;
@@ -70,8 +70,9 @@ async function verifyOTP(){
  const data=await res.json();
 
  if(data.success){
-  localStorage.setItem("name",data.name);
-  window.location="chat.html"; // ✅ FIXED
+  localStorage.setItem("name", data.name);
+  localStorage.setItem("phone", phone); // ✅ FIXED
+  window.location="chat.html";
  }else{
   alert(data.msg);
  }

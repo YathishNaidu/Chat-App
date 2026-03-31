@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Signup</title>
+<style>
+body{background:#0f172a;color:white;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;}
+.box{background:#1e293b;padding:30px;border-radius:12px;width:300px;text-align:center;}
+input,button{width:100%;padding:10px;margin:10px;border:none;border-radius:8px;}
+button{background:#22c55e;color:white;}
+#otpBox{display:none;}
+</style>
+</head>
+
+<body>
+<div class="box">
+<h2>Signup</h2>
+<input id="name" placeholder="Name">
+<input id="phone" placeholder="+91XXXXXXXXXX">
+<button onclick="sendOTP()">Send OTP</button>
+
+<div id="otpBox">
+<input id="otp" placeholder="OTP">
+<button onclick="verifyOTP()">Verify</button>
+</div>
+
+<div id="recaptcha-container"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+<script>
+firebase.initializeApp({
+ apiKey:"AIzaSyBg65FsCjDQidq8W3frj2F1qbZoJpHqIBQ",
+ authDomain:"chat-app-1929b.firebaseapp.com"
+});
+
+let confirmationResult, recaptcha;
+
+window.onload=()=>{
+ recaptcha=new firebase.auth.RecaptchaVerifier('recaptcha-container');
+ recaptcha.render();
+};
+
+function clean(p){ return p.replace(/\s+/g,''); }
+
+function sendOTP(){
+ let phone=clean(document.getElementById("phone").value);
+ if(!phone.startsWith("+91")) phone="+91"+phone;
+
+ firebase.auth().signInWithPhoneNumber(phone,recaptcha)
+ .then(r=>{
+  confirmationResult=r;
+  alert("OTP Sent");
+  document.getElementById("otpBox").style.display="block";
+ });
+}
+
+async function verifyOTP(){
+ let otp=document.getElementById("otp").value;
+ let name=document.getElementById("name").value;
+ let phone=clean(document.getElementById("phone").value);
+
+ await confirmationResult.confirm(otp);
+
+ await fetch('/signup',{
+  method:'POST',
+  headers:{'Content-Type':'application/json'},
+  body:JSON.stringify({name,phone})
+ });
+
+ alert("Registered - wait for admin");
+ window.location="index.html";
+}
+</script>
+</body>
+</html>

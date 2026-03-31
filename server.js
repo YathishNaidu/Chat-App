@@ -9,24 +9,20 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIO(server);
 
-// ===== MIDDLEWARE =====
 app.use(express.json());
 app.use(express.static('public'));
 
-// ===== ROOT ROUTE =====
+// ROOT
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/public/index.html");
 });
 
-// ===== DB (FIXED FOR RENDER) =====
-mongoose.connect(process.env.MONGO_URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log("MongoDB Connected"))
-.catch(err => console.log(err));
+// DB
+mongoose.connect(process.env.MONGO_URL)
+.then(()=>console.log("MongoDB Connected"))
+.catch(err=>console.log(err));
 
-// ===== SCHEMAS =====
+// SCHEMA
 const User = mongoose.model("User", new mongoose.Schema({
   name: String,
   phone: { type: String, unique: true },
@@ -41,19 +37,18 @@ const Message = mongoose.model("Message", new mongoose.Schema({
   time: { type: Date, default: Date.now }
 }));
 
-// ===== FILE UPLOAD =====
+// UPLOAD
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'public/uploads'),
-  filename: (req, file, cb) =>
-    cb(null, Date.now() + path.extname(file.originalname))
+  destination:(req,file,cb)=>cb(null,'public/uploads'),
+  filename:(req,file,cb)=>cb(null,Date.now()+path.extname(file.originalname))
 });
-const upload = multer({ storage });
+const upload = multer({storage});
 
-app.post('/upload', upload.single('file'), (req, res) => {
-  res.json({ file: req.file.filename });
+app.post('/upload', upload.single('file'), (req,res)=>{
+  res.json({file:req.file.filename});
 });
 
-// ===== SIGNUP =====
+// SIGNUP
 app.post('/signup', async (req, res) => {
   const { name, phone } = req.body;
 
@@ -64,49 +59,49 @@ app.post('/signup', async (req, res) => {
   res.json({ msg: "Registered! Wait for admin approval" });
 });
 
-// ===== LOGIN =====
+// LOGIN
 app.post('/login', async (req, res) => {
   const { phone } = req.body;
 
   const user = await User.findOne({ phone });
 
-  if (!user) return res.json({ success: false, msg: "User not registered" });
-  if (!user.approved) return res.json({ success: false, msg: "Wait for admin approval" });
+  if (!user) return res.json({ success:false, msg:"User not registered" });
+  if (!user.approved) return res.json({ success:false, msg:"Wait for admin approval" });
 
-  res.json({ success: true, name: user.name });
+  res.json({ success:true, name:user.name });
 });
 
-// ===== ADMIN =====
-app.get('/pending', async (req, res) => {
-  const users = await User.find({ approved: false });
+// ADMIN
+app.get('/pending', async (req,res)=>{
+  const users = await User.find({ approved:false });
   res.json(users);
 });
 
-app.post('/approve', async (req, res) => {
+app.post('/approve', async (req,res)=>{
   const { phone } = req.body;
-  await User.updateOne({ phone }, { $set: { approved: true } });
-  res.json({ msg: "Approved" });
+  await User.updateOne({ phone }, { $set:{ approved:true } });
+  res.json({ msg:"Approved" });
 });
 
-// ===== USERS =====
-app.get('/users', async (req, res) => {
-  const users = await User.find({ approved: true });
+// USERS
+app.get('/users', async (req,res)=>{
+  const users = await User.find({ approved:true });
   res.json(users);
 });
 
-// ===== MESSAGES =====
-app.get('/messages/:user/:target', async (req, res) => {
+// MESSAGES
+app.get('/messages/:user/:target', async (req,res)=>{
   const { user, target } = req.params;
 
   let msgs;
 
-  if (target === "group") {
-    msgs = await Message.find({ receiver: "group" });
-  } else {
+  if(target==="group"){
+    msgs = await Message.find({ receiver:"group" });
+  }else{
     msgs = await Message.find({
-      $or: [
-        { sender: user, receiver: target },
-        { sender: target, receiver: user }
+      $or:[
+        { sender:user, receiver:target },
+        { sender:target, receiver:user }
       ]
     });
   }
@@ -114,7 +109,7 @@ app.get('/messages/:user/:target', async (req, res) => {
   res.json(msgs);
 });
 
-// ===== SOCKET =====
+// SOCKET
 io.on('connection', socket => {
 
   socket.on('join', user => {
@@ -126,15 +121,14 @@ io.on('connection', socket => {
     io.emit('receive', msg);
   });
 
-  // VIDEO CALL
-  socket.on('offer', d => socket.broadcast.emit('offer', d));
-  socket.on('answer', d => socket.broadcast.emit('answer', d));
-  socket.on('ice-candidate', d => socket.broadcast.emit('ice-candidate', d));
+  socket.on('offer', d=>socket.broadcast.emit('offer',d));
+  socket.on('answer', d=>socket.broadcast.emit('answer',d));
+  socket.on('ice-candidate', d=>socket.broadcast.emit('ice-candidate',d));
 });
 
-// ===== START SERVER (FIXED) =====
+// START
 const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, () => {
+server.listen(PORT, ()=>{
   console.log("Server running on port " + PORT);
 });
